@@ -1,15 +1,18 @@
 import axios from "axios";
 import { useAuthStore } from "./store";
-import { getRefreshToken, deleteRefreshToken } from "./secureStore";
+import {
+  getRefreshToken,
+  deleteRefreshToken,
+  saveRefreshToken,
+} from "./secureStore";
 import { router } from "expo-router";
-
-const BASE_URL = "https://riseos-backup.vercel.app";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
+let refreshPromise: Promise<string> | null = null;
 
 const api = axios.create({
   baseURL: BASE_URL,
 });
 
-// Attach access token to every request
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
@@ -18,30 +21,52 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401, try silent refresh then retry
+const SKIP_REFRESH_ROUTES = ["/auth/login", "/auth/register", "/auth/refresh"];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log("Failed URL:", error.config?.baseURL + error.config?.url);
-    console.log("Status:", error.response?.status);
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const shouldSkip = SKIP_REFRESH_ROUTES.some((route) =>
+      originalRequest.url?.includes(route),
+    );
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !shouldSkip
+    ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await getRefreshToken();
-        if (!refreshToken) throw new Error("No refresh token");
+        if (!refreshPromise) {
+          refreshPromise = (async () => {
+            const storedToken = await getRefreshToken();
 
-        const res = await axios.post(`${BASE_URL}/api/auth/refresh`, {
-          refreshToken,
-        });
-        const { accessToken, user } = res.data;
-        useAuthStore.getState().setAuth(accessToken, user);
+            if (!storedToken) throw new Error("No refresh token");
+            const res = await axios.post(`${BASE_URL}/api/auth/refresh`, {
+              refreshToken: storedToken,
+            });
 
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            const {
+              accessToken,
+              refreshToken: newRefreshToken,
+              user,
+            } = res.data;
+            useAuthStore.getState().setAuth(accessToken, user);
+            await saveRefreshToken(newRefreshToken);
+
+            return accessToken;
+          })().finally(() => {
+            refreshPromise = null;
+          });
+        }
+
+        const newToken = await refreshPromise;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch {
+      } catch (err) {
         await deleteRefreshToken();
         useAuthStore.getState().clearAuth();
         router.replace("/(auth)/login");

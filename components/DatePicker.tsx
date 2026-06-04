@@ -10,10 +10,12 @@ import {
 import RNDateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { colors } from "../styles/theme";
 
 interface Props {
   label: string;
-  value: string; // "YYYY-MM-DD"
+  value: string;
   onChange: (val: string) => void;
 }
 
@@ -34,7 +36,7 @@ function formatDisplay(dateStr: string): string {
 }
 
 function toDateString(date: Date): string {
-  return date.toLocaleDateString("en-CA"); // "YYYY-MM-DD" in local time
+  return date.toLocaleDateString("en-CA");
 }
 
 export default function DatePickerField({ label, value, onChange }: Props) {
@@ -56,7 +58,11 @@ export default function DatePickerField({ label, value, onChange }: Props) {
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TouchableOpacity style={styles.button} onPress={() => setShow(true)}>
-        <Text style={styles.calendarIcon}>📅</Text>
+        <Ionicons
+          name="calendar-clear-outline"
+          size={24}
+          color={colors.accent}
+        />
         <Text style={styles.buttonText}>
           {value ? formatDisplay(value) : "Pick a date"}
         </Text>
@@ -114,7 +120,7 @@ const styles = StyleSheet.create({
     borderColor: "#2a2a2a",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "#111",
+    backgroundColor: colors.bgIconContainer,
     gap: 8,
   },
   calendarIcon: { fontSize: 16 },

@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from "../../styles/theme";
 
 const ICON_OPTIONS: Array<keyof typeof Ionicons.glyphMap> = [
   "book-outline",
@@ -42,7 +43,7 @@ interface SavePresetModalProps {
     durationSecs: number;
   }) => void;
   initialValues?: { name: string; icon: string; durationSecs: number } | null;
-  isEditing?: boolean; // ← add this
+  isEditing?: boolean;
 }
 
 export default function SavePresetModal({
@@ -294,7 +295,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // Duration
   durationRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -322,7 +322,6 @@ const styles = StyleSheet.create({
   timeUnit: { color: "#888", fontSize: 13 },
   timeSep: { color: "#888", fontSize: 24, fontWeight: "800" },
 
-  // Icons
   iconScroll: { marginVertical: 4 },
   iconOption: {
     width: 48,
@@ -336,11 +335,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   iconOptionActive: {
-    backgroundColor: "#6c63ff",
-    borderColor: "#6c63ff",
+    backgroundColor: colors.accentBg,
+    borderColor: colors.accent,
   },
-
-  // Actions
   actions: { flexDirection: "row", gap: 10, marginTop: 8 },
   cancelBtn: {
     flex: 1,
@@ -353,10 +350,10 @@ const styles = StyleSheet.create({
   cancelText: { color: "#888", fontWeight: "600" },
   saveBtn: {
     flex: 1,
-    backgroundColor: "#6c63ff",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
   },
-  saveText: { color: "#fff", fontWeight: "700" },
+  saveText: { color: colors.bg, fontWeight: "700" },
 });

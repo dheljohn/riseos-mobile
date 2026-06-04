@@ -5,8 +5,11 @@ import { Alert } from "react-native";
 
 export const useFocusLogs = () => {
   return useQuery<FocusSession[]>({
-    queryKey: ["meals"], // ← match the key you invalidate in addMutation
+    queryKey: ["focus"],
     queryFn: getFocusLogs,
+
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 };
 

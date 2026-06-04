@@ -1,4 +1,3 @@
-// lib/useNavigate.ts
 import { useRef } from "react";
 import { router } from "expo-router";
 

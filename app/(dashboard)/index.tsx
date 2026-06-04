@@ -4,7 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 
@@ -14,10 +14,13 @@ import StreakCard from "../../components/cards/StreakCard";
 import SleepCard from "../../components/cards/SleepCard";
 import MealsCard from "../../components/cards/MealCard";
 import FocusCard from "../../components/cards/FocusCard";
-import { common } from "../../styles/common";
 import { colors } from "../../styles/theme";
 import { useSummary } from "../../service/hooks/useSummary";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LogOut, Lightbulb } from "lucide-react-native";
+import PatternsCard from "../../components/cards/PatternsCard";
+import { useQueryClient } from "@tanstack/react-query";
+import DashboardSkeleton from "../../components/DashboardSkeleton";
 
 function getPartOfDay(timezone?: string) {
   const date = new Date();
@@ -30,11 +33,11 @@ function getPartOfDay(timezone?: string) {
     }).format(date),
   );
 
-  if (hour >= 5 && hour < 12) return "Morning";
-  if (hour >= 12 && hour < 18) return "Afternoon";
-  if (hour >= 18 && hour < 22) return "Evening";
+  if (hour >= 5 && hour < 12) return "MORNING";
+  if (hour >= 12 && hour < 18) return "AFTERNOON";
+  if (hour >= 18 && hour < 22) return "EVENING";
 
-  return "night";
+  return "NIGHT";
 }
 
 function StatCard({
@@ -55,28 +58,43 @@ function StatCard({
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
+function SectionHeader({
+  title,
+  icon,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <View style={styles.sectionHeader}>
+      {icon}
+      <Text style={styles.sectionHeaderTitle}>{title}</Text>
+    </View>
+  );
 }
-
 export default function DashboardScreen() {
+  const queryClient = useQueryClient();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const insets = useSafeAreaInsets();
 
   const { data, isLoading, isError, refetch } = useSummary();
 
+  function handleLogoutConfirm() {
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Log Out", style: "destructive", onPress: handleLogout },
+    ]);
+  }
+
   async function handleLogout() {
     await deleteRefreshToken();
     clearAuth();
+    queryClient.clear();
     router.replace("/(auth)/login");
   }
 
   if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color="#6c63ff" size="large" />
-      </View>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (isError || !data) {
@@ -95,27 +113,34 @@ export default function DashboardScreen() {
       style={styles.container}
       contentContainerStyle={{
         padding: 20,
-        paddingTop: insets.top + 20, // ← respects status bar
-        paddingBottom: insets.bottom + 90, // ← respects home indicator + nav bar
+        paddingTop: insets.top + 20,
+        paddingBottom: insets.bottom + 90,
       }}
-      // contentContainerStyle={styles.content}
     >
       {/* Header */}
+
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>
-            Good{" "}
+        <View style={styles.profile}>
+          {/* <Image
+            source={require("../../assets/icon.png")}
+            style={styles.image}
+          /> */}
+          <Text style={styles.greetings}>
+            GOOD{" "}
             {getPartOfDay(Intl.DateTimeFormat().resolvedOptions().timeZone)}
           </Text>
 
-          <Text style={styles.weekLabel}>
+          <Text style={styles.name}>
             {/* {new Date(data.weekStart).toLocaleDateString()} —{" "}
             {new Date(data.weekEnd).toLocaleDateString()} */}
-            {data.user.name}
+            {data.user.name.toUpperCase()}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
+
+        <TouchableOpacity onPress={handleLogoutConfirm}>
+          <View style={styles.iconContainer}>
+            <LogOut size={20} color={colors.textMuted} />
+          </View>
         </TouchableOpacity>
       </View>
       <View style={styles.gap}>
@@ -123,6 +148,7 @@ export default function DashboardScreen() {
           currentStreak={data.user.currentStreak}
           longestStreak={data.user.longestStreak}
         />
+        <Text style={styles.today}>TODAY</Text>
         <SleepCard
           sleepDuration={data.sleep.todaySleepDur}
           sleepQuality={data.sleep.todayEnergyLevel}
@@ -133,89 +159,37 @@ export default function DashboardScreen() {
         />
         <FocusCard
           totalFocusMinutes={data.focus.totalFocusMinutes}
-          todaysSessions={data.focus.todaysSessions}
+          todaySessions={data.focus.todaySessions}
         />
+        <PatternsCard patterns={data.patterns} />
       </View>
-
-      {/* Sleep */}
-      <SectionHeader title="😴 Sleep" />
-      <View style={styles.row}>
-        <StatCard label="Logs" value={`${data.sleep.totalLogs}`} />
-        <StatCard
-          label="Avg Duration"
-          value={`${data.sleep.avgSleepHours}h`}
-          sub={`goal: ${Math.round((data.sleep.avgEnergyLevel / 60) * 10) / 10}h`}
-        />
-        <StatCard label="Bedtime Gap" value={`${data.sleep.todaySleepDur}h`} />
-      </View>
-
-      {/* Meals */}
-      <SectionHeader title="🍽️ Meals" />
-      <View style={styles.row}>
-        <StatCard label="Logs" value={`${data.meals.totalLogs}`} />
-        {Object.entries(data.meals.mealsByType ?? {}).map(([type, count]) => (
-          <StatCard
-            key={type}
-            label={type.charAt(0).toUpperCase() + type.slice(1)}
-            value={`${count} logs`}
-          />
-        ))}
-      </View>
-
-      {/* Focus */}
-      <SectionHeader title="🎯 Focus" />
-      <View style={styles.row}>
-        <StatCard
-          label="Sessions"
-          value={`${data.focus.completedSessions}/${data.focus.totalSessions}`}
-          sub="completed"
-        />
-        <StatCard
-          label="Total Focus"
-          value={`${Math.round(data.focus.totalFocusMinutes)}m`}
-        />
-        <StatCard
-          label="Avg Overrun"
-          value={`${Math.round(data.focus.avgSessionDurationMins)}m`}
-        />
-      </View>
-
-      {/* Patterns */}
-      {data.patterns.length > 0 && (
-        <>
-          <SectionHeader title="💡 Patterns" />
-          <View style={styles.patternsCard}>
-            {data.patterns.map((p, i) => (
-              <Text key={i} style={styles.patternItem}>
-                • {p}
-              </Text>
-            ))}
-          </View>
-        </>
-      )}
-
-      {/* Nav */}
-      {/* <SectionHeader title="📋 Log Data" />
-        <View style={styles.navGrid}>
-          {[
-            { label: "Sleep", route: "/(dashboard)/sleep" },
-            { label: "Meals", route: "/(dashboard)/meals" },
-            { label: "Focus", route: "/(dashboard)/focus" },
-          ].map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={styles.navButton}
-              onPress={() => router.push(item.route as any)}
-            >
-              <Text style={styles.navButtonText}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View> */}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  profile: {
+    display: "flex",
+  },
+  today: {
+    fontSize: 14,
+    fontFamily: "SpaceGrotesk_400Regular",
+    letterSpacing: 2,
+    color: colors.textMuted,
+  },
+  image: {
+    width: 30,
+    height: 30,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 50,
+    backgroundColor: "#171b21",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   container: { flex: 1, backgroundColor: colors.bg },
   gap: { gap: 12 },
   content: { padding: 20, paddingBottom: 90 },
@@ -232,15 +206,29 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 24,
   },
-  title: { fontSize: 28, fontWeight: "800", color: colors.textPrimary },
-  weekLabel: { fontSize: 12, color: "#888", marginTop: 2 },
-  logoutText: { color: "#6c63ff", fontSize: 13 },
+  greetings: {
+    fontSize: 14,
+    fontFamily: "SpaceGrotesk_400Regular",
+    letterSpacing: 2,
+    color: colors.textMuted,
+  },
+  name: {
+    fontSize: 25,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    fontFamily: "SpaceGrotesk_400Regular",
+  },
   sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+    marginTop: 24,
+  },
+  sectionHeaderTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginTop: 20,
-    marginBottom: 10,
   },
   row: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
   card: {

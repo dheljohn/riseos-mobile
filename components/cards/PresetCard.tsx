@@ -1,18 +1,16 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Preset } from "../types/preset";
+import { Preset } from "../../types/preset";
+import { colors } from "../../styles/theme";
 
 interface PresetCardProps {
   preset: Preset;
   isSelected: boolean;
+  showActions: boolean;
+  disabled?: boolean;
   onPress: () => void;
+  onLongPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -29,34 +27,31 @@ function formatDuration(secs: number): string {
 export default function PresetCard({
   preset,
   isSelected,
+  showActions,
   onPress,
+  disabled,
+  onLongPress,
   onEdit,
   onDelete,
 }: PresetCardProps) {
-  const [showActions, setShowActions] = useState(false);
-
-  function handleLongPress() {
-    setShowActions(true);
-  }
-
   function handleEdit() {
-    setShowActions(false);
     onEdit();
   }
 
   function handleDelete() {
-    setShowActions(false);
     onDelete();
   }
 
   return (
     <TouchableOpacity
-      style={[styles.card, isSelected && styles.cardActive]}
-      onPress={() => {
-        setShowActions(false);
-        onPress();
-      }}
-      onLongPress={handleLongPress}
+      style={[
+        styles.card,
+        isSelected && styles.cardActive,
+        disabled && styles.cardDisabled,
+      ]}
+      disabled={disabled}
+      onPress={onPress}
+      onLongPress={onLongPress}
       delayLongPress={400}
       activeOpacity={0.8}
     >
@@ -64,7 +59,7 @@ export default function PresetCard({
         // Long press action overlay
         <View style={styles.actionsOverlay}>
           <TouchableOpacity style={styles.actionBtn} onPress={handleEdit}>
-            <Ionicons name="pencil-outline" size={16} color="#6c63ff" />
+            <Ionicons name="pencil-outline" size={16} color={colors.accent} />
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionBtn} onPress={handleDelete}>
@@ -77,7 +72,7 @@ export default function PresetCard({
             <Ionicons
               name={preset.icon as any}
               size={18}
-              color={isSelected ? "#fff" : "#6c63ff"}
+              color={isSelected ? "#000" : colors.accent}
             />
           </View>
           <Text
@@ -97,7 +92,7 @@ export default function PresetCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: colors.bgIconContainer,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#2a2a2a",
@@ -109,23 +104,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cardActive: {
-    borderColor: "#6c63ff",
-    backgroundColor: "#1e1b4b",
+    borderColor: colors.accent,
+    backgroundColor: colors.accentBg,
+  },
+  cardDisabled: {
+    opacity: 0.4,
   },
   iconBox: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "#111",
+    backgroundColor: colors.bgCard,
     alignItems: "center",
     justifyContent: "center",
   },
-  iconBoxActive: { backgroundColor: "#6c63ff" },
+  iconBoxActive: { backgroundColor: colors.accent },
   name: { fontSize: 11, color: "#aaa", textAlign: "center", fontWeight: "600" },
   nameActive: { color: "#fff" },
   duration: { fontSize: 10, color: "#666" },
-
-  // Actions overlay
   actionsOverlay: {
     flexDirection: "row",
     alignItems: "center",

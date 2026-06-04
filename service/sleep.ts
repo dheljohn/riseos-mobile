@@ -8,7 +8,6 @@ export interface AddSleepPayload {
 }
 export const getSleepLog = async (): Promise<SleepLog[]> => {
   const res = await api.get("/api/sleep");
-  console.log("SLEEP:", res.data);
   return res.data;
 };
 

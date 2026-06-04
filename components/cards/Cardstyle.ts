@@ -1,8 +1,9 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../../styles/theme";
 
 export const cardStyles = StyleSheet.create({
   card: {
-    backgroundColor: "#0e121790",
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#ffffff14",
@@ -11,8 +12,22 @@ export const cardStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-
     elevation: 10,
+  },
+
+  onCardPressed: {
+    backgroundColor: "#0e1217",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    elevation: 10,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
 
   leftSection: {

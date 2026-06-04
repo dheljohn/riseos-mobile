@@ -1,37 +1,50 @@
 {
   "expo": {
-    "name": "riseos-mobile",
+    "name": "RiseOS",
     "slug": "riseos-mobile",
     "scheme": "riseos",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/newLogoWide.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/newLogoWCon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#07090D"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "backgroundColor": "#07090D",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/newLogoWide.png",
+        "backgroundColor": "#07090D"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.dhel.riseosmobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/newLogoWCon.png",
+      "faviconBackground": "#07090D",
       "bundler": "metro"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-audio",
+      "expo-asset"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "173dc44e-f43f-4683-994e-efa9fcf4d9a8"
+      }
+    }
   }
 }

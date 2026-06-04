@@ -1,7 +1,6 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame } from "lucide-react-native";
-import { colors } from "../../styles/theme";
 
 interface StreakCardProps {
   currentStreak: number;
@@ -10,6 +9,7 @@ interface StreakCardProps {
 
 function getDayKey() {
   const now = new Date();
+
   const adjusted = new Date(now);
   adjusted.setHours(adjusted.getHours() - 5);
 
@@ -65,143 +65,190 @@ export default function StreakCard({
 
   return (
     <LinearGradient
-      locations={[0, 0.95, 1]}
+      locations={[0, 0.9, 1]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      colors={["#1a1a1a", "#002e3d", "#00f0f2"]}
+      end={{ x: 1, y: 1 }}
+      colors={["#111827", "#0b2f3c", "#00d9ff"]}
       style={styles.card}
     >
       <View style={styles.glow} />
-      <Image
-        source={require("../../assets/newLogo.png")}
-        style={styles.glowPic}
-      />
 
-      <View>
+      <View style={styles.leftContent}>
         <View style={styles.row}>
-          <Flame size={20} color={colors.accent} />
+          <Flame size={18} color="#67e8f9" />
 
-          <Text style={styles.label}>DISCPLINE STREAK</Text>
+          <Text style={styles.label}>DISCIPLINE STREAK</Text>
         </View>
+
         <View style={styles.streak}>
-          <Text style={styles.value}>{currentStreak} </Text>
+          <Text style={styles.value}>{currentStreak}</Text>
+
           <Text style={styles.textSmall}>
+            {" "}
             day{currentStreak !== 1 ? "s" : ""}
           </Text>
         </View>
 
         <Text style={styles.sub}>{RandomMotivation()}</Text>
 
-        {/* <Text style={styles.sub}>
-          Longest: {longestStreak} day
+        <Text style={styles.longest}>
+          Longest streak {longestStreak} day
           {longestStreak !== 1 ? "s" : ""}
-        </Text> */}
+        </Text>
       </View>
 
-      {/* <View style={styles.statusContainer}>
-        <Text style={styles.statusLabel}>Status</Text>
+      <View style={styles.statusContainer}>
+        <Text style={styles.statusLabel}>STATUS</Text>
 
-        <Text style={styles.status}>{active ? "On Fire" : "Start Today"}</Text>
-      </View> */}
+        <Text style={styles.status}>{active ? "On fire" : "Start today"}</Text>
+      </View>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  image: {
-    width: 30,
-    height: 30,
-  },
-  glowPic: {
-    position: "absolute",
-
-    width: 70,
-    height: 70,
-    zIndex: 30,
-
-    backgroundColor: "transparent",
-
-    opacity: 0.15,
-
-    top: 35,
-    right: 20,
-  },
-  glow: {
-    position: "absolute",
-
-    width: 220,
-    height: 220,
-
-    borderRadius: 999,
-
-    backgroundColor: "#0b3866",
-
-    opacity: 0.15,
-
-    zIndex: 20,
-
-    top: -120,
-    right: -80,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
   card: {
     overflow: "hidden",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 18,
-    padding: 20,
+
+    borderRadius: 24,
+
+    padding: 22,
+
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "rgba(255,255,255,0.06)",
+
+    position: "relative",
   },
-  streak: {
+
+  glow: {
+    position: "absolute",
+
+    width: 260,
+    height: 260,
+
+    borderRadius: 999,
+
+    backgroundColor: "#00e5ff",
+
+    opacity: 0.12,
+
+    top: -140,
+    right: -100,
+  },
+
+  leftContent: {
+    flex: 1,
+    paddingRight: 16,
+  },
+
+  row: {
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "center",
+
+    gap: 6,
+
+    marginBottom: 10,
   },
 
   label: {
     color: "#7dd3fc",
-    fontSize: 12,
-    fontWeight: "400",
+
+    fontSize: 11,
+
+    letterSpacing: 1.2,
+
+    fontFamily: "Inter_500Medium",
+
+    textTransform: "uppercase",
+  },
+
+  streak: {
+    flexDirection: "row",
+
+    alignItems: "flex-end",
   },
 
   value: {
-    color: "#fff",
-    fontSize: 50,
-    fontWeight: "800",
+    color: "#f8fbff",
+
+    fontSize: 54,
+
+    lineHeight: 58,
+
+    fontFamily: "SpaceGrotesk_700Bold",
   },
 
   textSmall: {
-    color: colors.iconDefault,
-    fontSize: 16,
-    fontWeight: "400",
+    color: "#cbd5e1",
+
+    fontSize: 14,
+
+    marginBottom: 10,
+
     fontFamily: "Inter_400Regular",
   },
 
   sub: {
-    color: "#888",
+    color: "#94a3b8",
+
+    fontSize: 13,
+
+    lineHeight: 18,
+
+    marginTop: 4,
+
+    maxWidth: 220,
+
+    fontFamily: "Inter_400Regular",
+  },
+
+  longest: {
+    color: "#64748b",
+
     fontSize: 12,
+
+    marginTop: 10,
+
+    fontFamily: "Inter_400Regular",
   },
 
   statusContainer: {
     alignItems: "flex-end",
+
+    backgroundColor: "rgba(255,255,255,0.04)",
+
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+
+    borderRadius: 16,
+
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
 
   statusLabel: {
-    color: "#888",
-    fontSize: 11,
-    marginBottom: 4,
+    color: "#64748b",
+
+    fontSize: 10,
+
+    marginBottom: 6,
+
+    textTransform: "uppercase",
+
+    letterSpacing: 1,
+
+    fontFamily: "Inter_500Medium",
   },
 
   status: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
+    color: "#67e8f9",
+
+    fontSize: 15,
+
+    fontFamily: "Inter_700Bold",
   },
 });

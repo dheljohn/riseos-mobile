@@ -11,7 +11,6 @@ export interface AddMealPayload {
 
 export const getMealLogs = async (): Promise<MealLog[]> => {
   const res = await api.get("/api/meals");
-  console.log("Meals:", res.data);
   return res.data;
 };
 

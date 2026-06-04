@@ -10,8 +10,11 @@ import { Alert } from "react-native";
 
 export const useMealLogs = () => {
   return useQuery<MealLog[]>({
-    queryKey: ["meals"], // ← match the key you invalidate in addMutation
+    queryKey: ["meals"],
     queryFn: getMealLogs,
+
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 };
 

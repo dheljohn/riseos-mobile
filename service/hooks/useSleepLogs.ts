@@ -10,8 +10,11 @@ import { Alert } from "react-native";
 
 export const useSleepLog = () => {
   return useQuery({
-    queryKey: ["sleep"], // ← match the key you invalidate in addMutation
+    queryKey: ["sleep"],
     queryFn: getSleepLog,
+
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
   });
 };
 

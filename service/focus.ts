@@ -3,7 +3,7 @@ import { FocusSession } from "../types/logs";
 
 export const getFocusLogs = async (): Promise<FocusSession[]> => {
   const res = await api.get("/api/focus");
-  console.log("FOCUS:", res.data);
+
   return res.data;
 };
 export const saveFocusSession = async (data: {
@@ -15,6 +15,7 @@ export const saveFocusSession = async (data: {
     ...data,
     logDay: new Date().toLocaleDateString("en-CA"),
   });
+
   return res.data;
 };
 

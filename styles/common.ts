@@ -17,7 +17,7 @@ export const common = StyleSheet.create({
 
   // inputs
   input: {
-    backgroundColor: colors.bgInput,
+    backgroundColor: colors.textPrimary,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
@@ -28,7 +28,7 @@ export const common = StyleSheet.create({
 
   // buttons
   primaryBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.textPrimary,
     borderRadius: radius.md,
     padding: 14,
     alignItems: "center" as const,
@@ -64,10 +64,10 @@ export const common = StyleSheet.create({
   },
   label: {
     fontSize: typography.sm,
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
   errorText: {
-    color: colors.danger,
+    color: colors.error,
     fontSize: typography.sm,
   },
 

@@ -1,7 +1,10 @@
 export const colors = {
   // Base
-  bg: "#020305",
-  bgCard: "#171b21",
+  bg: "#07090D",
+  // bg: "#020305",
+
+  bgCard: "#0E1217",
+  // bgCard: "#060709",
   bgIconContainer: "#171b21",
 
   // Borders
@@ -29,6 +32,11 @@ export const colors = {
   iconDefault: "#88909c",
   iconActive: "#f6f9fc",
   iconAccent: "#00f0f2",
+
+  delete: "#88909c",
+  deleteHover: "#ff4c4d",
+
+  error: "#ff4c4d",
 
   // Misc
   chevron: "#88909c",

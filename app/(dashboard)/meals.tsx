@@ -9,9 +9,6 @@ import {
   Alert,
   TextInput,
 } from "react-native";
-import { router } from "expo-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../lib/api";
 import DatePickerField from "../../components/DatePicker";
 import {
   useAddMealLog,
@@ -19,11 +16,16 @@ import {
   useMealLogs,
 } from "../../service/hooks/useMealLogs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "../../styles/theme";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Ionicons } from "@expo/vector-icons";
+import { formatLogDate } from "../../utils/dateFormatter";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
 
 export default function MealsScreen() {
   const insets = useSafeAreaInsets();
+  const today = new Date();
 
   const [logDay, setLogDay] = useState(new Date().toLocaleDateString("en-CA"));
   const [mealType, setMealType] = useState("breakfast");
@@ -33,7 +35,6 @@ export default function MealsScreen() {
   const { data: logs, isLoading } = useMealLogs();
 
   const addMutation = useAddMealLog(() => {
-    // reset form here — component owns its own state
     setMealType("breakfast");
     setName("");
     setCalories("");
@@ -67,23 +68,24 @@ export default function MealsScreen() {
   }
 
   const totalCalories =
-    logs?.reduce((sum, meal) => sum + (meal.calories ?? 0), 0) ?? 0;
+    logs
+      ?.filter((meal) => {
+        const mealDate = new Date(meal.logDay);
+        return mealDate.toDateString() === today.toDateString();
+      })
+      .reduce((sum, meal) => sum + (meal.calories ?? 0), 0) ?? 0;
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{
         padding: 20,
-        paddingTop: insets.top + 20, // ← respects status bar
-        paddingBottom: insets.bottom + 90, // ← respects home indicator + nav bar
+        paddingTop: insets.top + 20,
+        paddingBottom: insets.bottom + 90,
       }}
-      // contentContainerStyle={styles.content}
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Meals</Text>
       </View>
 
@@ -149,36 +151,52 @@ export default function MealsScreen() {
 
       {/* Logs */}
       <View style={styles.sectionRow}>
-        <Text style={styles.sectionHeader}>All Logs</Text>
-        <Text style={styles.totalCalories}>{totalCalories} kcal</Text>
+        <Text style={styles.sectionHeader}>Previous Logs</Text>
+        <Text style={styles.totalCalories}>Today: {totalCalories} kcal</Text>
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#6c63ff" />
+        <ActivityIndicator color={colors.accent} />
       ) : logs?.length === 0 ? (
         <Text style={styles.empty}>No meals logged yet</Text>
       ) : (
         logs?.map((log) => (
           <View key={log.id} style={styles.logCard}>
+            <View style={styles.logIcon}>
+              <FontAwesome name="cutlery" size={18} color="#00f0f2" />
+            </View>
             <View style={styles.logRow}>
               <View style={{ flex: 1 }}>
-                <View style={styles.logTitleRow}>
+                <View style={styles.logTitle}>
+                  <Text style={styles.logName}>{log.name}</Text>
+                </View>
+
+                <View style={styles.logMeta}>
                   <Text style={styles.logType}>
                     {log.mealType.charAt(0).toUpperCase() +
                       log.mealType.slice(1)}
                   </Text>
-                  <Text style={styles.logDot}>•</Text>
-                  <Text style={styles.logName}>{log.name}</Text>
-                </View>
-                <View style={styles.logMeta}>
                   {log.calories ? (
-                    <Text style={styles.logMetaText}>{log.calories} kcal</Text>
+                    <>
+                      <Text style={styles.logDot}>•</Text>
+                      <Text style={styles.logMetaText}>
+                        {log.calories} kcal
+                      </Text>
+                    </>
                   ) : null}
-                  <Text style={styles.logMetaText}>
-                    {new Date(log.logDay + "T00:00:00").toLocaleDateString([], {
-                      month: "short",
-                      day: "numeric",
-                    })}
+                  {/* <View style={styles.logMetaRow}>
+                    {log.calories ? (
+                      <>
+                        <Text style={styles.logDot}>•</Text>
+                        <Text style={styles.logMetaText}>
+                          {log.calories} kcal
+                        </Text>
+                      </>
+                    ) : null}
+                  </View> */}
+                  <Text style={styles.logDot}>•</Text>
+                  <Text style={styles.logDate}>
+                    {formatLogDate(log.logDay)}
                   </Text>
                 </View>
               </View>
@@ -186,7 +204,11 @@ export default function MealsScreen() {
                 onPress={() => confirmDelete(log.id)}
                 style={styles.deleteBtn}
               >
-                <Text style={styles.deleteText}>✕</Text>
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color={colors.delete}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -197,7 +219,9 @@ export default function MealsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f0f0f" },
+  container: { flex: 1, backgroundColor: colors.bg },
+  logTitle: { flexDirection: "row", alignItems: "center", gap: 4 },
+  logMetaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   content: { padding: 20, paddingBottom: 40 },
   header: {
     flexDirection: "row",
@@ -205,10 +229,9 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 24,
   },
-  back: { color: "#6c63ff", fontSize: 15 },
   title: { fontSize: 24, fontWeight: "800", color: "#fff" },
   form: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: colors.bgCard,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
@@ -221,12 +244,16 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   typeBtn: {
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: colors.border,
+    backgroundColor: colors.bgIconContainer,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 11,
   },
-  typeBtnActive: { backgroundColor: "#6c63ff", borderColor: "#6c63ff" },
+  typeBtnActive: {
+    backgroundColor: colors.accentBg,
+    borderColor: colors.accent,
+  },
   typeBtnText: { color: "#888", fontSize: 13 },
   typeBtnTextActive: { color: "#fff", fontWeight: "700" },
   input: {
@@ -239,12 +266,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   button: {
-    backgroundColor: "#6c63ff",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
   },
-  buttonText: { color: "#fff", fontWeight: "700" },
+  buttonText: { color: colors.bg, fontWeight: "700" },
   sectionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -254,21 +281,40 @@ const styles = StyleSheet.create({
   sectionHeader: { fontSize: 16, fontWeight: "700", color: "#fff" },
   totalCalories: { fontSize: 13, color: "#888" },
   empty: { color: "#555", fontSize: 14, textAlign: "center", marginTop: 20 },
-  logCard: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    marginBottom: 10,
-  },
-  logRow: { flexDirection: "row", alignItems: "center" },
+  logRow: { flexDirection: "row", alignItems: "center", flex: 1 },
   logTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  logType: { fontSize: 12, color: "#6c63ff", fontWeight: "700" },
+  logType: { fontSize: 12, color: "#888", fontWeight: "700" },
   logDot: { fontSize: 12, color: "#555" },
-  logName: { fontSize: 14, fontWeight: "600", color: "#fff" },
-  logMeta: { flexDirection: "row", gap: 10, marginTop: 4 },
+  logName: { fontSize: 14, fontWeight: "600", color: "#fff", gap: 8 },
+  logDate: { fontSize: 11, color: "#555", marginTop: 0 },
+
+  logMeta: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+    alignItems: "center",
+  },
   logMetaText: { fontSize: 11, color: "#888" },
   deleteBtn: { padding: 8 },
-  deleteText: { color: "#ff4d4d", fontSize: 16 },
+
+  logCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: 24,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+
+    gap: 10,
+  },
+  logIcon: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.accentBlur,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

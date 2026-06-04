@@ -8,14 +8,19 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import api from "../../lib/api";
 import { saveRefreshToken } from "../../lib/secureStore";
 import { useAuthStore } from "../../lib/store";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from "../../styles/theme";
+import AuthRedirect from "../../components/auth/AuthRedirect";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function RegisterScreen() {
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +31,7 @@ export default function RegisterScreen() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const { setAuth, clearAuth } = useAuthStore();
   const strength = getPasswordStrength(password);
   const isPasswordValid = Object.values(strength).every(Boolean);
 
@@ -35,10 +40,13 @@ export default function RegisterScreen() {
     setLoading(true);
     if (!isPasswordValid) {
       setError("Password doesn't meet requirements");
+      setLoading(false);
       return;
     }
     if (password !== confirmPassword) {
-      throw new Error("Passwords do not match");
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
     try {
       const res = await api.post("/api/auth/register", {
@@ -47,11 +55,13 @@ export default function RegisterScreen() {
         password,
       });
       const { accessToken, refreshToken, user } = res.data;
+
       await saveRefreshToken(refreshToken);
+      clearAuth();
+      queryClient.clear();
       setAuth(accessToken, user);
       router.replace("/(dashboard)");
     } catch (err: any) {
-      console.log("Register error:", err.response?.data ?? err.message);
       setError(err.response?.data?.error ?? "Registration failed");
     } finally {
       setLoading(false);
@@ -65,6 +75,7 @@ export default function RegisterScreen() {
       hasLowercase: /[a-z]/.test(password),
     };
   }
+
   function HintRow({ met, label }: { met: boolean; label: string }) {
     return (
       <View style={styles.hintRow}>
@@ -82,12 +93,18 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.inner}>
-        <Text style={styles.title}>RiseOS</Text>
-        <Text style={styles.subtitle}>Create your account</Text>
-
+        <View style={styles.topSection}>
+          {/* <Text style={styles.logo}>RiseOS</Text> */}
+          <Image
+            source={require("../../assets/newLogo.png")}
+            style={styles.image}
+          />
+        </View>
+        <Text style={styles.loginWelcome}>BEGIN PROTOCOL</Text>
+        <Text style={styles.loginHeader}>Train your discipline.</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TextInput
@@ -129,12 +146,12 @@ export default function RegisterScreen() {
         </View>
         {password.length > 0 && (
           <View style={styles.hintBox}>
+            <HintRow met={strength.hasUppercase} label="One uppercase letter" />
+            <HintRow met={strength.hasLowercase} label="One lowercase letter" />
             <HintRow
               met={strength.hasMinLength}
               label="At least 8 characters"
             />
-            <HintRow met={strength.hasUppercase} label="One uppercase letter" />
-            <HintRow met={strength.hasLowercase} label="One lowercase letter" />
           </View>
         )}
 
@@ -171,36 +188,65 @@ export default function RegisterScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-          <Text style={styles.link}>Already have an account? Log In</Text>
-        </TouchableOpacity>
+        <AuthRedirect
+          text="Have an account?"
+          linkText="Log In"
+          route="/(auth)/login"
+        />
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f0f0f" },
+  container: { flex: 1, backgroundColor: colors.bg },
+  topSection: {
+    paddingTop: 60,
+    marginBottom: 60,
+  },
+  image: {
+    width: 50,
+    height: 50,
+  },
+  logo: {
+    fontSize: 28,
+    letterSpacing: -1,
+    fontFamily: "SpaceGrotesk_500Medium",
+    color: "#fff",
+  },
+  loginWelcome: {
+    color: "#888",
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 1.5,
+  },
+  loginHeader: {
+    color: "#fff",
+    fontSize: 38,
+    fontFamily: "SpaceGrotesk_500Medium",
+    marginBottom: 18,
+  },
   hintBox: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 8,
-    padding: 10,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
+    // backgroundColor: "#1a1a1a",
+    // borderRadius: 8,
+    padding: 0,
+    gap: 0,
+    // borderWidth: 1,
+    // borderColor: "#2a2a2a",
   },
   hintRow: {
     flexDirection: "row",
+    justifyContent: "flex-start",
     alignItems: "center",
-    gap: 8,
+    gap: 0,
   },
   hintDot: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: "700",
     width: 16,
   },
   hintText: {
-    fontSize: 13,
+    fontSize: 10,
   },
   hintMet: { color: "#4caf50" },
   hintUnmet: { color: "#888" },
@@ -211,14 +257,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
     borderRadius: 8,
     // marginBottom: 15,
-    backgroundColor: "#1a1a1a",
+    borderColor: colors.border,
+    backgroundColor: colors.bgCard,
+    overflow: "hidden",
   },
   passInput: {
     flex: 1,
     height: 50,
+    borderColor: colors.border,
+    backgroundColor: colors.bgCard,
     paddingHorizontal: 15,
     color: "#fff",
   },
@@ -229,7 +278,7 @@ const styles = StyleSheet.create({
   },
   inner: {
     flex: 1,
-    justifyContent: "center",
+    // justifyContent: "center",
     paddingHorizontal: 24,
     gap: 12,
   },
@@ -247,22 +296,27 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   input: {
-    backgroundColor: "#1a1a1a",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: colors.border,
+    backgroundColor: colors.bgCard,
     borderRadius: 10,
     padding: 14,
     color: "#fff",
     fontSize: 15,
   },
   button: {
-    backgroundColor: "#6c63ff",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
     marginTop: 8,
   },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  buttonText: { color: colors.bg, fontWeight: "700", fontSize: 15 },
   error: { color: "#ff4d4d", textAlign: "center", fontSize: 13 },
-  link: { color: "#6c63ff", textAlign: "center", marginTop: 8, fontSize: 13 },
+  link: {
+    color: colors.accent,
+    textAlign: "center",
+    marginTop: 8,
+    fontSize: 13,
+  },
 });

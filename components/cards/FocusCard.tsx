@@ -1,25 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import { View, Text, Pressable } from "react-native";
 import { cardStyles as styles } from "./Cardstyle";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useNavigate } from "../../lib/useNavigate";
+import { colors } from "../../styles/theme";
 
 interface FocusCardProps {
   totalFocusMinutes: number;
-  todaysSessions: number;
+  todaySessions: number;
 }
 
 export default function FocusCard({
   totalFocusMinutes,
-  todaysSessions,
+  todaySessions,
 }: FocusCardProps) {
   const { navigate } = useNavigate();
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.onCardPressed]}
       onPress={() => navigate("/(dashboard)/focus")}
     >
       <View style={styles.leftSection}>
@@ -30,12 +29,23 @@ export default function FocusCard({
 
         <View style={styles.textContainer}>
           <Text style={styles.label}>Focus</Text>
-          <Text style={styles.value}>{totalFocusMinutes}m</Text>
-          <Text style={styles.sub}>{todaysSessions} session</Text>
+          {totalFocusMinutes === 0 ? (
+            <Text style={styles.value}>Tap to log</Text>
+          ) : (
+            <>
+              <Text style={styles.value}>{totalFocusMinutes}m</Text>
+
+              {totalFocusMinutes !== 0 && (
+                <Text style={styles.sub}>{todaySessions} session</Text>
+              )}
+            </>
+          )}
+          {/* <Text style={styles.value}>{totalFocusMinutes}m</Text>
+          <Text style={styles.sub}>{todaysSessions} session</Text> */}
         </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={22} color="#7b8190" />
-    </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={18} color={colors.chevron} />
+    </Pressable>
   );
 }

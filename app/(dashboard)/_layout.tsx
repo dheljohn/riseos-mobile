@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { colors } from "../../styles/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +27,7 @@ export default function DashboardLayout() {
             width: "90%",
             marginHorizontal: "5%",
             borderWidth: 1,
-            // borderTopWidth: 0,
+
             borderColor: colors.border,
             height: 64,
             elevation: 12,
@@ -78,8 +79,8 @@ export default function DashboardLayout() {
           options={{
             title: "Focus",
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons
-                name={focused ? "timer" : "timer-outline"}
+              <AntDesign
+                name={focused ? "aim" : "aim"}
                 size={20}
                 color={color}
               />

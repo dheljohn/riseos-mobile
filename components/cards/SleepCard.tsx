@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 import { cardStyles as styles } from "./Cardstyle";
 import { useNavigate } from "../../lib/useNavigate";
+import { colors } from "../../styles/theme";
 
 interface SleepCardProps {
   sleepDuration: number;
@@ -16,25 +17,33 @@ export default function SleepCard({
 }: SleepCardProps) {
   const { navigate } = useNavigate();
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.onCardPressed]}
       onPress={() => navigate("/(dashboard)/sleep")}
     >
       <View style={styles.leftSection}>
         <View style={styles.iconContainer}>
-          <Ionicons name="bed-outline" size={18} color="#00f0f2" />
+          <Ionicons name="moon" size={18} color="#00f0f2" />
         </View>
 
         <View style={styles.textContainer}>
           <Text style={styles.label}>Sleep</Text>
-          <Text style={styles.value}>{sleepDuration}h</Text>
-          <Text style={styles.sub}>{ENERGY_LABELS[sleepQuality]}</Text>
+          {sleepDuration === 0 ? (
+            <Text style={styles.value}>Tap to log</Text>
+          ) : (
+            <>
+              <Text style={styles.value}>{sleepDuration}h</Text>
+
+              {sleepQuality !== 0 && (
+                <Text style={styles.sub}>{ENERGY_LABELS[sleepQuality]}</Text>
+              )}
+            </>
+          )}
         </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={22} color="#7b8190" />
-    </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={18} color={colors.chevron} />
+    </Pressable>
   );
 }
 const ENERGY_LABELS: Record<number, string> = {

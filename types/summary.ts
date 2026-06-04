@@ -29,7 +29,7 @@ export interface Summary {
 
   focus: {
     totalSessions: number;
-    todaysSessions: number;
+    todaySessions: number;
     completedSessions: number;
     completionRate: number;
     totalFocusMinutes: number;

@@ -9,23 +9,27 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import { router } from "expo-router";
+
 import Svg, { Circle } from "react-native-svg";
 import SavePresetModal from "../../components/modal/TimePreset";
-import { DEFAULT_PRESETS, Preset } from "../../components/types/preset";
+import { DEFAULT_PRESETS, Preset } from "../../types/preset";
 import PresetCard from "../../components/cards/PresetCard";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  useDeleteFocusSession,
   useFocusLogs,
   useSaveFocusSession,
 } from "../../service/hooks/useFocusLogs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "../../styles/theme";
+import Entypo from "@expo/vector-icons/Entypo";
+import { formatLogDate } from "../../utils/dateFormatter";
+import { useAudioPlayer } from "expo-audio";
+import { getDeletedPresetIds, markPresetDeleted } from "../../lib/deletePreset";
 
-// const PRESETS = [25, 60, 90];
 type TimerState = "idle" | "running" | "paused";
 
 export default function FocusScreen() {
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const savedRef = useRef(false);
   const insets = useSafeAreaInsets();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -33,24 +37,27 @@ export default function FocusScreen() {
 
   const [focusLabel, setFocusLabel] = useState("");
   const [selectedMins, setSelectedMins] = useState(25);
-  const [customInput, setCustomInput] = useState("25");
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [timerState, setTimerState] = useState<TimerState>("idle");
+  const totalSecsRef = useRef(25 * 60);
 
   const [editingTimer, setEditingTimer] = useState(false);
   const [timerInput, setTimerInput] = useState("25:00");
 
   const [showPresetModal, setShowPresetModal] = useState(false);
 
-  const [presets, setPresets] = useState<Preset[]>(DEFAULT_PRESETS);
+  const [presets, setPresets] = useState<Preset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [editingPreset, setEditingPreset] = useState<Preset | null>(null);
 
+  const player = useAudioPlayer(require("../../assets/alarm.mp3"));
+
   const { data: sessions, isLoading } = useFocusLogs();
   const saveMutation = useSaveFocusSession();
-  const deleteMutation = useDeleteFocusSession();
+  const isRunning = timerState === "running";
+  const totalItems = presets.length + 1;
+  const ghostCount = (3 - (totalItems % 3)) % 3;
 
-  // Countdown tick
   useEffect(() => {
     if (timerState === "running") {
       intervalRef.current = setInterval(() => {
@@ -58,15 +65,7 @@ export default function FocusScreen() {
           if (prev <= 1) {
             clearInterval(intervalRef.current!);
             setTimerState("idle");
-            if (!savedRef.current) {
-              savedRef.current = true;
-              saveMutation.mutate({
-                label: focusLabel.trim() || "Focus Session",
-                durationMins: startMinsRef.current,
-                completed: true,
-              });
-              Alert.alert("🎉 Done!", "Focus session complete!");
-            }
+            handleSessionComplete();
             return 0;
           }
           return prev - 1;
@@ -80,18 +79,55 @@ export default function FocusScreen() {
     };
   }, [timerState]);
 
+  useEffect(() => {
+    getDeletedPresetIds().then((deletedIds) => {
+      setPresets(DEFAULT_PRESETS.filter((p) => !deletedIds.includes(p.id)));
+    });
+  }, []);
+
+  async function handleSessionComplete() {
+    if (savedRef.current) return;
+    savedRef.current = true;
+
+    if (startMinsRef.current >= 5) {
+      saveMutation.mutate({
+        label: focusLabel.trim() || "Focus Session",
+        durationMins: startMinsRef.current,
+        completed: true,
+      });
+    }
+
+    player.play();
+    Alert.alert("🎉 Done!", "Focus session complete!", [
+      {
+        text: "OK",
+        onPress: () => {
+          player.pause();
+          setTimerState("idle");
+          setSecondsLeft(totalSecsRef.current);
+          setFocusLabel("");
+          setSelectedPresetId(null);
+          setSelectedMins(totalSecsRef.current / 60);
+          savedRef.current = false;
+        },
+      },
+    ]);
+  }
+
   function handleSelectPreset(preset: Preset) {
     setSelectedPresetId(preset.id);
     const secs = preset.durationSecs;
     setSecondsLeft(secs);
+    totalSecsRef.current = secs;
     startMinsRef.current = Math.ceil(secs / 60);
-    setSelectedMins(Math.ceil(secs / 60));
+    setSelectedMins(secs / 60);
     setFocusLabel(preset.name);
   }
 
-  function handleDeletePreset(id: string) {
-    // don't allow deleting if only 1 left
-    if (presets.length <= 1) return;
+  async function handleDeletePreset(id: string) {
+    if (id.startsWith("default-")) {
+      await markPresetDeleted(id);
+    }
     setPresets((prev) => prev.filter((p) => p.id !== id));
     if (selectedPresetId === id) setSelectedPresetId(null);
   }
@@ -102,14 +138,11 @@ export default function FocusScreen() {
     durationSecs: number;
   }) {
     if (editingPreset) {
-      // editing existing
       setPresets((prev) =>
         prev.map((p) => (p.id === editingPreset.id ? { ...p, ...data } : p)),
       );
       setEditingPreset(null);
     } else {
-      // adding new
-
       const newPreset: Preset = {
         id: `preset-${Date.now()}`,
         ...data,
@@ -118,24 +151,6 @@ export default function FocusScreen() {
     }
     setShowPresetModal(false);
   }
-
-  // function applyMins(mins: number) {
-  //   if (timerState !== "idle") return;
-  //   setSelectedMins(mins);
-  //   setCustomInput(String(mins));
-  //   setSecondsLeft(mins * 60);
-  //   startMinsRef.current = mins;
-  // }
-
-  // function handleCustomInput(val: string) {
-  //   setCustomInput(val);
-  //   const parsed = parseInt(val);
-  //   if (!isNaN(parsed) && parsed > 0 && timerState === "idle") {
-  //     setSelectedMins(parsed);
-  //     setSecondsLeft(parsed * 60);
-  //     startMinsRef.current = parsed;
-  //   }
-  // }
 
   function handleStartPause() {
     if (timerState === "idle") {
@@ -151,12 +166,12 @@ export default function FocusScreen() {
 
   function handleReset() {
     setTimerState("idle");
-    setSecondsLeft(startMinsRef.current * 60);
+    setSecondsLeft(totalSecsRef.current);
   }
 
   function handleAbandon() {
     const elapsed = startMinsRef.current - Math.ceil(secondsLeft / 60);
-    if (elapsed >= 1) {
+    if (elapsed >= 5) {
       saveMutation.mutate({
         label: focusLabel.trim() || "Focus Session",
         durationMins: elapsed,
@@ -166,11 +181,10 @@ export default function FocusScreen() {
     handleReset();
   }
 
-  // Circle timer math
   const SIZE = 220;
   const RADIUS = 90;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-  const totalSeconds = startMinsRef.current * 60;
+  const totalSeconds = totalSecsRef.current;
   const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 1;
   const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
   const mins = Math.floor(secondsLeft / 60)
@@ -185,26 +199,15 @@ export default function FocusScreen() {
         ? "Pause"
         : "Continue";
 
-  function confirmDelete(id: string) {
-    Alert.alert("Delete", "Remove this session?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => deleteMutation.mutate(id),
-      },
-    ]);
-  }
-
   return (
     <ScrollView
       style={styles.container}
-      //  contentContainerStyle={styles.content}
       contentContainerStyle={{
         padding: 20,
-        paddingTop: insets.top + 20, // ← respects status bar
-        paddingBottom: insets.bottom + 90, // ← respects home indicator + nav bar
+        paddingTop: insets.top + 20,
+        paddingBottom: insets.bottom + 90,
       }}
+      onScrollBeginDrag={() => setActivePresetId(null)}
     >
       <SavePresetModal
         visible={showPresetModal}
@@ -227,16 +230,13 @@ export default function FocusScreen() {
       {/* Header */}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>← Back</Text>
-        </TouchableOpacity>
         <Text style={styles.title}>Focus</Text>
       </View>
       {/* Timer Card */}
       <View style={styles.card}>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Coding, Reading, Deep Work..."
+          placeholder="e.g., Creating, Learning, Deep Work..."
           placeholderTextColor="#555"
           value={focusLabel}
           onChangeText={setFocusLabel}
@@ -261,7 +261,7 @@ export default function FocusScreen() {
               cy={SIZE / 2}
               r={RADIUS}
               fill="none"
-              stroke="#6c63ff"
+              stroke={colors.accent}
               strokeWidth={10}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
@@ -277,14 +277,15 @@ export default function FocusScreen() {
                 value={timerInput}
                 onChangeText={(val) => {
                   setTimerInput(val);
-                  // parse MM:SS input in real time
+
                   const [m, s] = val.split(":").map(Number);
                   if (!isNaN(m) && !isNaN(s)) {
                     const total = m * 60 + s;
                     if (total > 0) {
                       setSecondsLeft(total);
+                      totalSecsRef.current = total;
                       startMinsRef.current = Math.ceil(total / 60);
-                      setSelectedMins(Math.ceil(total / 60));
+                      setSelectedMins(total / 60);
                     }
                   }
                 }}
@@ -309,11 +310,15 @@ export default function FocusScreen() {
               </TouchableOpacity>
             )}
 
-            {focusLabel ? (
+            {isRunning || timerState === "paused" ? (
               <Text style={styles.timerLabel} numberOfLines={1}>
-                {focusLabel}
+                {selectedMins >= 1
+                  ? `${Math.ceil(selectedMins)} ${Math.ceil(selectedMins) === 1 ? "min" : "mins"}`
+                  : `${Math.round(selectedMins * 60)} secs`}
               </Text>
-            ) : null}
+            ) : (
+              <Text style={styles.timerLabel}>Tap time to edit</Text>
+            )}
           </View>
         </View>
 
@@ -324,19 +329,33 @@ export default function FocusScreen() {
             <PresetCard
               key={preset.id}
               preset={preset}
+              disabled={isRunning}
               isSelected={selectedPresetId === preset.id}
-              onPress={() => handleSelectPreset(preset)}
+              showActions={activePresetId === preset.id}
+              onLongPress={() => !isRunning && setActivePresetId(preset.id)}
+              onPress={() => {
+                if (isRunning) return;
+                setActivePresetId(null);
+                handleSelectPreset(preset);
+              }}
               onEdit={() => {
+                if (isRunning) return;
+                setActivePresetId(null);
                 setEditingPreset(preset);
                 setShowPresetModal(true);
               }}
-              onDelete={() => handleDeletePreset(preset.id)}
+              onDelete={() => {
+                if (isRunning) return;
+                setActivePresetId(null);
+                handleDeletePreset(preset.id);
+              }}
             />
           ))}
 
           {/* Add button */}
           <TouchableOpacity
             style={styles.addpresetBtn}
+            disabled={isRunning}
             onPress={() => {
               setEditingPreset(null);
               setShowPresetModal(true);
@@ -345,21 +364,15 @@ export default function FocusScreen() {
             <Ionicons name="add" size={24} color="#888" />
             <Text style={styles.addPresetText}>New</Text>
           </TouchableOpacity>
+          {/* ghost fillers — invisible but push last row to the left */}
+          {Array.from({ length: ghostCount }).map((_, i) => (
+            <View
+              key={`ghost-${i}`}
+              style={[styles.addpresetBtn, { opacity: 0 }]}
+            />
+          ))}
         </View>
 
-        {/* Custom Input */}
-        {/* <View style={styles.customRow}>
-          <TextInput
-            style={styles.customInput}
-            value={customInput}
-            onChangeText={handleCustomInput}
-            keyboardType="numeric"
-            editable={timerState === "idle"}
-          />
-          <Text style={styles.customLabel}>min</Text>
-        </View> */}
-
-        {/* Controls */}
         <View style={styles.controlsRow}>
           <TouchableOpacity
             style={styles.primaryBtn}
@@ -378,34 +391,35 @@ export default function FocusScreen() {
         </View>
       </View>
       {/* Sessions Log */}
-      <Text style={styles.sectionHeader}>Today's Sessions</Text>
+      <Text style={styles.sectionHeader}>Previous Sessions</Text>
       {isLoading ? (
-        <ActivityIndicator color="#6c63ff" />
+        <ActivityIndicator color={colors.accent} />
       ) : sessions?.length === 0 ? (
-        <Text style={styles.empty}>No sessions yet today</Text>
+        <Text style={styles.empty}>No sessions yet</Text>
       ) : (
         sessions?.map((session) => (
           <View key={session.id} style={styles.logCard}>
-            <View style={styles.logRow}>
-              <View style={{ flex: 1 }}>
-                <View style={styles.logTitleRow}>
-                  <Text style={styles.logLabel}>{session.label}</Text>
-                  <Text>{session.completed ? "✅" : "❌"}</Text>
-                </View>
-                <Text style={styles.logMeta}>
-                  {session.durationMins} min ·{" "}
+            <View style={styles.logIcon}>
+              <Entypo name="check" size={20} color={colors.accent} />
+            </View>
+            <View style={styles.logTitleRow}>
+              <Text style={styles.logLabel}>{session.label}</Text>
+              <View style={styles.logMetaRow}>
+                <Text style={styles.logMetaText}>
+                  {session.durationMins} min
+                </Text>
+                <Text style={styles.logDot}>•</Text>
+                <Text style={styles.logMetaText}>
                   {new Date(session.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </Text>
+                <Text style={styles.logDot}>•</Text>
+                <Text style={styles.logDate}>
+                  {formatLogDate(session.logDay)}
+                </Text>
               </View>
-              <TouchableOpacity
-                onPress={() => confirmDelete(session.id)}
-                style={styles.deleteBtn}
-              >
-                <Text style={styles.deleteText}>✕</Text>
-              </TouchableOpacity>
             </View>
           </View>
         ))
@@ -415,7 +429,13 @@ export default function FocusScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f0f0f" },
+  container: { flex: 1, backgroundColor: colors.bg },
+  logDot: { fontSize: 12, color: "#555" },
+  logDate: { fontSize: 11, color: "#555", marginTop: 0 },
+  logMetaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logMeta: { flexDirection: "row", color: "#888", gap: 8 },
+  logMetaText: { fontSize: 11, color: "#888" },
+
   content: { padding: 20, paddingBottom: 40 },
   header: {
     flexDirection: "row",
@@ -423,22 +443,42 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 24,
   },
-  back: { color: "#6c63ff", fontSize: 15 },
+  logCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: 24,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+
+    gap: 10,
+  },
+  logIcon: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.accentBlur,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   title: { fontSize: 24, fontWeight: "800", color: "#fff" },
   card: {
-    backgroundColor: "#1a1a1a",
+    backgroundColor: colors.bgCard,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
 
-    borderColor: "#2a2a2a",
+    borderColor: colors.border,
     gap: 16,
     marginBottom: 24,
     alignItems: "center",
   },
   cardTitle: { fontSize: 14, color: "#888", alignSelf: "flex-start" },
   input: {
-    backgroundColor: "#111",
+    backgroundColor: colors.bgIconContainer,
     borderWidth: 1,
     borderColor: "#2a2a2a",
     borderRadius: 8,
@@ -471,10 +511,10 @@ const styles = StyleSheet.create({
   },
   presetsRow: {
     flexDirection: "row",
-    flexWrap: "wrap", // ← wraps to next row
+    flexWrap: "wrap",
     gap: 8,
     width: "100%",
-    justifyContent: "space-between",
+    justifyContent: "center",
   },
   addPresetText: { fontSize: 11, color: "#888" },
   addpresetBtn: {
@@ -488,13 +528,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
-  presetBtn: {
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
+
   presetBtnActive: { backgroundColor: "#6c63ff", borderColor: "#6c63ff" },
   presetBtnText: { color: "#888", fontSize: 13 },
   presetBtnTextActive: { color: "#fff", fontWeight: "700" },
@@ -514,12 +548,12 @@ const styles = StyleSheet.create({
   controlsRow: { flexDirection: "row", gap: 10, width: "100%" },
   primaryBtn: {
     flex: 1,
-    backgroundColor: "#6c63ff",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
   },
-  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: "#000", fontWeight: "700", fontSize: 15 },
   secondaryBtn: {
     flex: 1,
     borderWidth: 1,
@@ -536,23 +570,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   empty: { color: "#555", fontSize: 14, textAlign: "center", marginTop: 20 },
-  logCard: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    marginBottom: 10,
-  },
-  logRow: { flexDirection: "row", alignItems: "center" },
+
+  logRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   logTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
+    flexDirection: "column",
+    alignItems: "flex-start",
+    alignSelf: "center",
+    flex: 1,
   },
   logLabel: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  logMeta: { fontSize: 12, color: "#888" },
+
   deleteBtn: { padding: 8 },
   deleteText: { color: "#ff4d4d", fontSize: 16 },
 });

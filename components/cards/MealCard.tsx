@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import { View, Text, Pressable } from "react-native";
 import { cardStyles as styles } from "./Cardstyle";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+
 import { useNavigate } from "../../lib/useNavigate";
+import { colors } from "../../styles/theme";
 
 interface MealsCardProps {
   mealsKcal: number;
@@ -17,9 +18,8 @@ export default function MealsCard({
 }: MealsCardProps) {
   const { navigate } = useNavigate();
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.onCardPressed]}
       onPress={() => navigate("/(dashboard)/meals")}
     >
       <View style={styles.leftSection}>
@@ -29,12 +29,23 @@ export default function MealsCard({
 
         <View style={styles.textContainer}>
           <Text style={styles.label}>Meal</Text>
-          <Text style={styles.value}>{mealsQuantity}</Text>
-          <Text style={styles.sub}>{mealsKcal} kcal</Text>
+          {mealsQuantity === 0 ? (
+            <Text style={styles.value}>Tap to log</Text>
+          ) : (
+            <>
+              <Text style={styles.value}>{mealsQuantity}</Text>
+
+              {mealsQuantity !== 0 && (
+                <Text style={styles.sub}>{mealsKcal} kcal</Text>
+              )}
+            </>
+          )}
+          {/* <Text style={styles.value}>{mealsQuantity}h</Text>
+          <Text style={styles.sub}>{mealsKcal} kcal</Text> */}
         </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={22} color="#7b8190" />
-    </TouchableOpacity>
+      <Ionicons name="chevron-forward" size={18} color={colors.chevron} />
+    </Pressable>
   );
 }

@@ -12,9 +12,15 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://riseos-backup.vercel.app"
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://riseos-backup.vercel.app"
+      },
       "autoIncrement": true
     }
   },

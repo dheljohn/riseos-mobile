@@ -1,8 +1,8 @@
 ﻿# RiseOS Mobile
 
 A React Native wellness and productivity app that helps users track sleep, meals, and focus sessions — built with Expo and a Node.js backend.
-Download via Google Drive Package Installer
-<img src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" width="250" alt="qr-code" />
+# Download via Google Drive Package Installer
+- <img src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" width="250" alt="qr-code" />
 <!-- <img width="1083" height="1083" alt="qr-code" src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" /> -->
 
 ---

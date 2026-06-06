@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 4,
-    marginTop: 13,
+    marginTop: 8,
   },
 
   text: {

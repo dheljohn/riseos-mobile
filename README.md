@@ -3,8 +3,9 @@
 A React Native wellness and productivity app that helps users track sleep, meals, and focus sessions — built with Expo and a Node.js backend.
 
 Download Here
+
 - <img src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" width="250" alt="qr-code" />
- 
+
 <!-- <img width="1083" height="1083" alt="qr-code" src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" /> -->
 
 ---
@@ -154,9 +155,9 @@ The backend returns a new refresh token on every `/api/auth/refresh` call. The o
 
 ## Related Repos
 
-| Repo                                                            | Description                                                         |
-| --------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [riseos-backend](https://github.com/dheljohn/riseos-backup)     | Node.js REST API — auth, sleep, meals, focus, and summary endpoints |
+| Repo                                                        | Description                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| [riseos-backend](https://github.com/dheljohn/riseos-backup) | Node.js REST API — auth, sleep, meals, focus, and summary endpoints |
 
 ---
 

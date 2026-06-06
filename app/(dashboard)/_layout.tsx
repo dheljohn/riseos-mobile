@@ -79,11 +79,7 @@ export default function DashboardLayout() {
           options={{
             title: "Focus",
             tabBarIcon: ({ color, focused }) => (
-              <AntDesign
-                name={focused ? "aim" : "aim"}
-                size={20}
-                color={color}
-              />
+              <AntDesign name="aim" size={20} color={color} />
             ),
           }}
         />

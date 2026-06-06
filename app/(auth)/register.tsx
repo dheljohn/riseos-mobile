@@ -18,8 +18,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../styles/theme";
 import AuthRedirect from "../../components/auth/AuthRedirect";
 import { useQueryClient } from "@tanstack/react-query";
+import Checkbox from "../../components/CheckBox";
+import WebModal from "../../components/WebModal";
 
 export default function RegisterScreen() {
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,6 +30,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState("");
@@ -35,6 +39,13 @@ export default function RegisterScreen() {
   const strength = getPasswordStrength(password);
   const isPasswordValid = Object.values(strength).every(Boolean);
 
+  const [agree, setAgree] = useState(false);
+
+  const [showLegal, setShowLegal] = useState(false);
+  const [legalUrl, setLegalUrl] = useState("");
+
+  const allMet =
+    strength.hasUppercase && strength.hasLowercase && strength.hasMinLength;
   async function handleRegister() {
     setError("");
     setLoading(true);
@@ -48,6 +59,12 @@ export default function RegisterScreen() {
       setLoading(false);
       return;
     }
+    if (!agree) {
+      setError("You must agree to the terms and conditions");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await api.post("/api/auth/register", {
         name,
@@ -103,96 +120,135 @@ export default function RegisterScreen() {
             style={styles.image}
           />
         </View>
-        <Text style={styles.loginWelcome}>BEGIN PROTOCOL</Text>
-        <Text style={styles.loginHeader}>Train your discipline.</Text>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Name"
-          placeholderTextColor="#888"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#888"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
+        <View style={styles.bottomSection}>
+          <Text style={styles.loginWelcome}>BEGIN PROTOCOL</Text>
+          <Text style={styles.loginHeader}>Train your discipline.</Text>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <View style={styles.inputContainer}>
           <TextInput
-            style={styles.passInput}
-            placeholder="Password"
+            style={styles.input}
+            placeholder="Name"
             placeholderTextColor="#888"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
+            value={name}
+            onChangeText={setName}
           />
-          <TouchableOpacity
-            style={styles.iconContainer}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={22}
-              color="#888"
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#888"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.passInput}
+              placeholder="Password"
+              placeholderTextColor="#888"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
             />
-          </TouchableOpacity>
-        </View>
-        {password.length > 0 && (
-          <View style={styles.hintBox}>
-            <HintRow met={strength.hasUppercase} label="One uppercase letter" />
-            <HintRow met={strength.hasLowercase} label="One lowercase letter" />
-            <HintRow
-              met={strength.hasMinLength}
-              label="At least 8 characters"
-            />
+            <TouchableOpacity
+              style={styles.iconContainer}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="#888"
+              />
+            </TouchableOpacity>
           </View>
-        )}
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.passInput}
-            placeholder="Confirm Password"
-            placeholderTextColor="#888"
-            secureTextEntry={!showConfirmPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <TouchableOpacity
-            style={styles.iconContainer}
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <Ionicons
-              name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-              size={22}
-              color="#888"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Register</Text>
+          {password.length > 0 && !allMet && (
+            <View style={styles.hintBox}>
+              <HintRow
+                met={strength.hasUppercase}
+                label="One uppercase letter"
+              />
+              <HintRow
+                met={strength.hasLowercase}
+                label="One lowercase letter"
+              />
+              <HintRow
+                met={strength.hasMinLength}
+                label="At least 8 characters"
+              />
+            </View>
           )}
-        </TouchableOpacity>
 
-        <AuthRedirect
-          text="Have an account?"
-          linkText="Log In"
-          route="/(auth)/login"
-        />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.passInput}
+              placeholder="Confirm Password"
+              placeholderTextColor="#888"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity
+              style={styles.iconContainer}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons
+                name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                size={22}
+                color="#888"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Register</Text>
+            )}
+          </TouchableOpacity>
+          <Checkbox value={agree} onChange={setAgree}>
+            <Text style={styles.privacyTerms}>
+              I agree to the{" "}
+              <Text
+                style={styles.link}
+                onPress={() => {
+                  setLegalUrl(`${BASE_URL}/privacy`);
+                  setShowLegal(true);
+                }}
+              >
+                Privacy Policy
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.link}
+                onPress={() => {
+                  setLegalUrl(`${BASE_URL}/terms`);
+                  setShowLegal(true);
+                }}
+              >
+                Terms of Use
+              </Text>
+            </Text>
+          </Checkbox>
+
+          <WebModal
+            visible={showLegal}
+            url={legalUrl}
+            onClose={() => setShowLegal(false)}
+          />
+
+          <AuthRedirect
+            text="Have an account?"
+            linkText="Log In"
+            route="/(auth)/login"
+          />
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -204,6 +260,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     marginBottom: 60,
   },
+
   image: {
     width: 50,
     height: 50,
@@ -227,12 +284,11 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   hintBox: {
-    // backgroundColor: "#1a1a1a",
-    // borderRadius: 8,
     padding: 0,
     gap: 0,
-    // borderWidth: 1,
-    // borderColor: "#2a2a2a",
+  },
+  privacyTerms: {
+    color: "#888",
   },
   hintRow: {
     flexDirection: "row",
@@ -276,11 +332,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  bottomSection: {
+    alignSelf: "center",
+    gap: 12,
+    justifyContent: "center",
+  },
   inner: {
     flex: 1,
-    // justifyContent: "center",
     paddingHorizontal: 24,
-    gap: 12,
   },
   title: {
     fontSize: 36,
@@ -311,7 +370,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  buttonText: { color: colors.bg, fontWeight: "700", fontSize: 15 },
+  buttonText: { fontWeight: "500", fontSize: 15 },
   error: { color: "#ff4d4d", textAlign: "center", fontSize: 13 },
   link: {
     color: colors.accent,

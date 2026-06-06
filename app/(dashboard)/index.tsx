@@ -17,10 +17,13 @@ import FocusCard from "../../components/cards/FocusCard";
 import { colors } from "../../styles/theme";
 import { useSummary } from "../../service/hooks/useSummary";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LogOut, Lightbulb } from "lucide-react-native";
+import { Settings } from "lucide-react-native";
 import PatternsCard from "../../components/cards/PatternsCard";
 import { useQueryClient } from "@tanstack/react-query";
 import DashboardSkeleton from "../../components/DashboardSkeleton";
+import SettingsModal from "../../components/SettingsModal";
+import { useState } from "react";
+import api from "../../lib/api";
 
 function getPartOfDay(timezone?: string) {
   const date = new Date();
@@ -79,18 +82,33 @@ export default function DashboardScreen() {
 
   const { data, isLoading, isError, refetch } = useSummary();
 
-  function handleLogoutConfirm() {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Log Out", style: "destructive", onPress: handleLogout },
-    ]);
-  }
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   async function handleLogout() {
     await deleteRefreshToken();
     clearAuth();
     queryClient.clear();
     router.replace("/(auth)/login");
+  }
+
+  async function handleDeleteAccount() {
+    await api.delete("/api/auth/delete-account");
+
+    Alert.alert(
+      "Account Deleted",
+      "Your account has been permanently deleted.",
+      [
+        {
+          text: "OK",
+          onPress: async () => {
+            await deleteRefreshToken();
+            clearAuth();
+            queryClient.clear();
+            router.replace("/(auth)/login");
+          },
+        },
+      ],
+    );
   }
 
   if (isLoading) {
@@ -130,16 +148,12 @@ export default function DashboardScreen() {
             {getPartOfDay(Intl.DateTimeFormat().resolvedOptions().timeZone)}
           </Text>
 
-          <Text style={styles.name}>
-            {/* {new Date(data.weekStart).toLocaleDateString()} —{" "}
-            {new Date(data.weekEnd).toLocaleDateString()} */}
-            {data.user.name.toUpperCase()}
-          </Text>
+          <Text style={styles.name}>{data.user.name.toUpperCase()}</Text>
         </View>
 
-        <TouchableOpacity onPress={handleLogoutConfirm}>
+        <TouchableOpacity onPress={() => setSettingsOpen(true)}>
           <View style={styles.iconContainer}>
-            <LogOut size={20} color={colors.textMuted} />
+            <Settings size={20} color={colors.textMuted} />
           </View>
         </TouchableOpacity>
       </View>
@@ -163,6 +177,12 @@ export default function DashboardScreen() {
         />
         <PatternsCard patterns={data.patterns} />
       </View>
+      <SettingsModal
+        visible={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onLogout={handleLogout}
+        onDeleteAccount={handleDeleteAccount}
+      />
     </ScrollView>
   );
 }

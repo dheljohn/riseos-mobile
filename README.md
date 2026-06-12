@@ -24,7 +24,7 @@ Download Here via Google Drive
 ### Tracking
 
 <img width="250" alt="MealsPage" src="https://github.com/user-attachments/assets/c9eb371b-389e-42dc-aa6a-8441146bfd2e" />
-<img width="250" alt="FocusPage" src="https://github.com/user-attachments/assets/0983fc83-5a09-4568-9182-30fa92b858b0" />
+<img width="250" alt="FocusPage" src="https://github.com/user-attachments/assets/6fd5daa0-bc06-49b5-9d46-11f410eda4fc" />
 <img width="250" alt="SleepPage" src="https://github.com/user-attachments/assets/aa7bcd7e-c325-4b71-9fd1-030ec131a7b1" />
 
 ---

@@ -2,7 +2,7 @@
 
 A React Native wellness and productivity app that helps users track sleep, meals, and focus sessions — built with Expo and a Node.js backend.
 
-Download Here
+Download Here via Google Drive
 
 - <img src="https://github.com/user-attachments/assets/4c2e8cc5-0c23-4839-90f0-854bb530f2db" width="250" alt="qr-code" />
 

@@ -10,6 +10,34 @@ Download Here
 
 ---
 
+## Screenshots
+
+### Authentication
+<img width="250" alt="login" src="https://github.com/user-attachments/assets/d8210599-4746-44ca-8ed3-5466cb1768d4" />
+<img width="250" alt="register" src="https://github.com/user-attachments/assets/a8bb790d-2ab5-4932-ae68-5e31387e4b41" />
+
+### Dashboard
+
+<img width="250" alt="Dashboard" src="https://github.com/user-attachments/assets/945afe20-811d-44b6-b565-b30746e5683a" />
+
+
+### Tracking
+
+<img width="250" alt="MealsPage" src="https://github.com/user-attachments/assets/c9eb371b-389e-42dc-aa6a-8441146bfd2e" />
+<img width="250" alt="FocusPage" src="https://github.com/user-attachments/assets/131f8456-daa2-4ccf-8570-d6edffcede6e" />
+<img width="250" alt="SleepPage" src="https://github.com/user-attachments/assets/aa7bcd7e-c325-4b71-9fd1-030ec131a7b1" />
+
+---
+
+## Features
+
+- JWT Authentication with refresh token rotation
+- Sleep tracking and history
+- Meal logging and tracking
+- Focus session timer and logs
+- Secure session persistence
+- Mobile-first experience with React Native (Expo)
+
 ## Tech Stack
 
 | Layer                    | Technology                                                                  |
